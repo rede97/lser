@@ -16,9 +16,10 @@ struct SerialItem {
 impl SerialItem {
     pub fn from_serial_info(serial_info: SerialInfo) -> SerialItem {
         let field_or_else = || Some(String::from("--"));
+        let driver_info = serial_info.driver;
         return SerialItem {
             name: serial_info.name,
-            vendor: serial_info.vendor.or_else(field_or_else).unwrap(),
+            vendor: serial_info.vendor.or_else(|| driver_info).or_else(field_or_else).unwrap(),
             product: serial_info.product.or_else(field_or_else).unwrap(),
             usb: serial_info
                 .usb_info
@@ -30,7 +31,8 @@ impl SerialItem {
 }
 
 fn main() {
-    let serials_info = get_serial_list();
+    let mut serials_info = get_serial_list();
+    serials_info.sort_by(|a, b| a.name.cmp(&b.name));
     let mut serials_table = Vec::new();
     for serial_info in serials_info {
         serials_table.push(SerialItem::from_serial_info(serial_info));
