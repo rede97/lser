@@ -1,0 +1,17 @@
+[package]
+name = "lser"
+version = "0.1.0"
+edition = "2018"
+authors = ["Xiaoqing Ma <rede1997@outlook.com>"]
+description = "A serial port enumreator library writen"
+homepage = "https://github.com/rede97/lser"
+repository = "https://github.com/rede97/lser"
+include = ["Cargo.toml", "src/**/*.rs", "README.md"]
+keywords = ["serial", "tty", "UART"]
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cli-table = "0.4.6"
+serial_enumerator = "0.2.2"
