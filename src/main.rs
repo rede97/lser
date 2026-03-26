@@ -1,41 +1,84 @@
-use cli_table::{format::Justify, print_stdout, Table, WithTitle};
+use clap::Parser;
+use rich_rust::console::Console;
+use rich_rust::renderables::table::{Cell, Column, Table};
+use rich_rust::style::Style;
+use rich_rust::text::JustifyMethod;
 use serial_enumerator::{get_serial_list, SerialInfo};
 
-#[derive(Table)]
+#[derive(Parser)]
+#[command(author, version, about = "List available serial ports")]
+struct Args {
+    /// Output as CSV (header + comma-separated rows)
+    #[arg(long, conflicts_with = "json")]
+    plain: bool,
+
+    /// Output as JSON array
+    #[arg(long, conflicts_with = "plain")]
+    json: bool,
+}
+
+#[derive(serde::Serialize)]
 struct SerialItem {
-    #[table(title = "Name")]
     name: String,
-    #[table(title = "Vendor", justify = "Justify::Center")]
     vendor: String,
-    #[table(title = "Product", justify = "Justify::Center")]
     product: String,
-    #[table(title = "USB", justify = "Justify::Center")]
     usb: String,
 }
 
 impl SerialItem {
-    pub fn from_serial_info(serial_info: SerialInfo) -> SerialItem {
-        let field_or_else = || Some(String::from("--"));
+    fn from_serial_info(serial_info: SerialInfo) -> SerialItem {
+        let dash = || Some(String::from("--"));
         let driver_info = serial_info.driver;
-        return SerialItem {
+        SerialItem {
             name: serial_info.name,
-            vendor: serial_info.vendor.or_else(|| driver_info).or_else(field_or_else).unwrap(),
-            product: serial_info.product.or_else(field_or_else).unwrap(),
+            vendor: serial_info.vendor.or_else(|| driver_info).or_else(dash).unwrap(),
+            product: serial_info.product.or_else(dash).unwrap(),
             usb: serial_info
                 .usb_info
-                .and_then(|usbinfo| Some(format!("{}:{}", usbinfo.vid, usbinfo.pid)))
-                .or_else(field_or_else)
+                .map(|u| format!("{}:{}", u.vid, u.pid))
+                .or_else(dash)
                 .unwrap(),
-        };
+        }
     }
 }
 
 fn main() {
+    let args = Args::parse();
+
     let mut serials_info = get_serial_list();
     serials_info.sort_by(|a, b| a.name.cmp(&b.name));
-    let mut serials_table = Vec::new();
-    for serial_info in serials_info {
-        serials_table.push(SerialItem::from_serial_info(serial_info));
+    let serials: Vec<SerialItem> = serials_info
+        .into_iter()
+        .map(SerialItem::from_serial_info)
+        .collect();
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&serials).unwrap());
+    } else if args.plain {
+        println!("name,vendor,product,usb");
+        for s in &serials {
+            println!("{},{},{},{}", s.name, s.vendor, s.product, s.usb);
+        }
+    } else {
+        print_rich_table(&serials);
     }
-    print_stdout(serials_table.with_title()).unwrap();
+}
+
+fn print_rich_table(serials: &[SerialItem]) {
+    let mut table = Table::new()
+        .with_column(Column::new("Name").style(Style::new().bold()))
+        .with_column(Column::new("Vendor").justify(JustifyMethod::Center))
+        .with_column(Column::new("Product").justify(JustifyMethod::Center))
+        .with_column(Column::new("USB").justify(JustifyMethod::Center));
+
+    for s in serials {
+        table.add_row_cells([
+            Cell::new(s.name.as_str()),
+            Cell::new(s.vendor.as_str()),
+            Cell::new(s.product.as_str()),
+            Cell::new(s.usb.as_str()),
+        ]);
+    }
+
+    Console::new().print_renderable(&table);
 }
