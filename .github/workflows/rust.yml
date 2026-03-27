@@ -58,15 +58,19 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu.2.17
+            rustup_target: x86_64-unknown-linux-gnu
             artifact: lser-linux-x86_64
             binary: target/x86_64-unknown-linux-gnu/release/lser
           - target: aarch64-unknown-linux-gnu.2.17
+            rustup_target: aarch64-unknown-linux-gnu
             artifact: lser-linux-aarch64
             binary: target/aarch64-unknown-linux-gnu/release/lser
           - target: arm-unknown-linux-gnueabi.2.17
+            rustup_target: arm-unknown-linux-gnueabi
             artifact: lser-linux-arm-eabi
             binary: target/arm-unknown-linux-gnueabi/release/lser
           - target: arm-unknown-linux-gnueabihf.2.17
+            rustup_target: arm-unknown-linux-gnueabihf
             artifact: lser-linux-arm-eabihf
             binary: target/arm-unknown-linux-gnueabihf/release/lser
 
@@ -76,7 +80,7 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.rustup_target }}
 
       - name: Cache cargo registry
         uses: actions/cache@v4
