@@ -1,6 +1,6 @@
 [package]
 name = "lser"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2018"
 authors = ["Xiaoqing Ma <rede1997@outlook.com>"]
 license = "MIT"
@@ -14,7 +14,7 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serial_enumerator = "0.2.2"
+serial_enumerator = "0.3.1"
 rich_rust = "0.2"
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
