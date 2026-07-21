@@ -5,6 +5,40 @@ use rich_rust::style::Style;
 use rich_rust::text::JustifyMethod;
 use serial_enumerator::{get_serial_list, SerialInfo};
 
+// On arm-unknown-linux-gnueabi (soft-float), recent rustc lowers float
+// min/max to the compiler-rt calls fminimum_num/fmaximum_num, which zig's
+// compiler-rt does not provide for this target. Define them here so the
+// zigbuild link succeeds. Comparisons are used instead of f64::min/max to
+// avoid recursively emitting the same libcalls.
+#[cfg(all(target_arch = "arm", target_os = "linux", not(target_feature = "vfp2")))]
+mod compiler_rt_shim {
+    #[no_mangle]
+    pub extern "C" fn fminimum_num(a: f64, b: f64) -> f64 {
+        if a.is_nan() {
+            b
+        } else if b.is_nan() {
+            a
+        } else if a < b {
+            a
+        } else {
+            b
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn fmaximum_num(a: f64, b: f64) -> f64 {
+        if a.is_nan() {
+            b
+        } else if b.is_nan() {
+            a
+        } else if a > b {
+            a
+        } else {
+            b
+        }
+    }
+}
+
 #[derive(Parser)]
 #[command(author, version, about = "List available serial ports")]
 struct Args {
